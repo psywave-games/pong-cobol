@@ -28,12 +28,18 @@
       *    C: COLOR
    
        01 R-CODE USAGE BINARY-LONG.
+       01 R-DELTATIME PIC S9(1)V9(8).
+       01 R-KEY-UP    PIC 9.
+       01 R-KEY-DOWN  PIC 9.
+      
+       01 K-UP   PIC 9(8) VALUE 265.
+       01 K-DOWN PIC 9(9) VALUE 264.
+       01 K-ESC  PIC 9(8) VALUE 256.
+       78 K-PRESSED       VALUE 7.
        
-       01 K-ESC PIC 9(8).
-       
-       78 W-WIDTH      VALUE 800.
-       78 W-HEIGHT     VALUE 450.
-       78 W-NAME       VALUE "PONG COBOL GAME".
+       78 W-WIDTH         VALUE 800.
+       78 W-HEIGHT        VALUE 450.
+       78 W-NAME          VALUE "PONG COBOL GAME".
 
        01 C-WHITE.
            02 R PIC S9(3) VALUE 245 BINARY.
@@ -52,14 +58,15 @@
       *    P: PLAYER
        78 P-WIDTH         VALUE 8.
        78 P-HEIGHT        VALUE 80.
-       77 P-POSY PIC 999  VALUE 225.
+       78 P-POSX          VALUE 10.
+       77 P-POSY PIC 9(3)V9(8).
       *----------------------------------------------------------------*
       *    BALL-VARIABLES
       *----------------------------------------------------------------*
       *    B: BALL
        78 B-SIZE         VALUE 16.
-       77 B-POSX PIC 999.
-       77 B-POSY PIC 999.
+       77 B-POSX PIC 999 VALUE 400.
+       77 B-POSY PIC 999 VALUE 225.
        77 B-HSPEED PIC S9(3).
        77 B-VSPEED PIC S9(3).
       *================================================================*
@@ -90,9 +97,27 @@
                    RETURNING K-ESC
                END-CALL
             
+               PERFORM GAME-INPUT
+               PERFORM PLAYER-MOVE
+               PERFORM BALL-MOVE
                PERFORM GAME-DRAW
+
+               CALL "GetFrameTime" 
+                   RETURNING R-DELTATIME
+               END-CALL
                
            END-PERFORM.
+      *----------------------------------------------------------------*
+       GAME-INPUT                                               SECTION.
+           CALL "IsKeyDown" USING 
+               BY VALUE K-UP
+               RETURNING R-KEY-UP
+           END-CALL
+
+           CALL "IsKeyDown" USING 
+               BY VALUE K-DOWN
+               RETURNING R-KEY-DOWN
+           END-CALL.
       *----------------------------------------------------------------*
        GAME-DRAW                                                SECTION.
            CALL STATIC "BeginDrawing"
@@ -103,9 +128,41 @@
                RETURNING OMITTED
            END-CALL
 
+           PERFORM PLAYER-DRAW
+           PERFORM BALL-DRAW
+
            CALL STATIC "EndDrawing"
                RETURNING OMITTED
            END-CALL.
+      *----------------------------------------------------------------*
+       PLAYER-MOVE                                              SECTION.
+           IF R-KEY-UP = K-PRESSED THEN 
+               SUBTRACT 1 FROM P-POSY
+           END-IF
+           IF R-KEY-DOWN = K-PRESSED THEN 
+               IF SUM(P-POSY, P-HEIGHT) < W-HEIGHT THEN
+                   ADD 1 TO P-POSY
+               END-IF
+           END-IF.
+      *----------------------------------------------------------------*
+       PLAYER-DRAW                                              SECTION.
+           CALL static "DrawRectangle" USING
+               BY VALUE P-POSX P-POSY
+               BY VALUE P-WIDTH P-HEIGHT
+               BY CONTENT C-WHITE
+           END-CALL.
+      *----------------------------------------------------------------*
+       BALL-MOVE                                                SECTION.
+           ADD B-HSPEED TO B-POSX
+           ADD B-VSPEED TO B-POSY.
+
+      *----------------------------------------------------------------*
+       BALL-DRAW                                                SECTION.
+           CALL static "DrawRectangle" USING
+               BY VALUE B-POSX B-POSY B-SIZE B-SIZE
+               BY CONTENT C-WHITE
+           END-CALL.
+      
       *----------------------------------------------------------------*
        CLOSE-WINDOW                                             SECTION.
            CALL "CloseWindow"
