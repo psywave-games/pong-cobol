@@ -32,48 +32,49 @@
        01 R-KEY-UP    PIC 9.
        01 R-KEY-DOWN  PIC 9.
       
-       01 K-UP   PIC 9(8) VALUE 265.
-       01 K-DOWN PIC 9(9) VALUE 264.
-       01 K-ESC  PIC 9(8) VALUE 256.
-       78 K-PRESSED       VALUE 7.
+       01 K-UP     PIC 9(8)    VALUE 265.
+       01 K-DOWN   PIC 9(9)    VALUE 264.
+       01 K-ESC    PIC 9(8)    VALUE 256.
+       78 K-PRESSED            VALUE 7.
        
-       78 W-WIDTH         VALUE 800.
-       78 W-HEIGHT        VALUE 450.
-       78 W-NAME          VALUE "PONG COBOL GAME".
+       78 W-WIDTH              VALUE 800.
+       78 W-HEIGHT             VALUE 450.
+       78 W-NAME               VALUE "PONG COBOL GAME".
 
        01 C-WHITE.
-           02 R PIC S9(3) VALUE 245 BINARY.
-           02 G PIC S9(3) VALUE 245 BINARY.
-           02 B PIC S9(3) VALUE 245 BINARY.
-           02 A PIC S9(3) VALUE 255 BINARY.
+           02 R    PIC S9(3)   VALUE 245 BINARY.
+           02 G    PIC S9(3)   VALUE 245 BINARY.
+           02 B    PIC S9(3)   VALUE 245 BINARY.
+           02 A    PIC S9(3)   VALUE 255 BINARY.
 
        01 C-BLACK.
-           02 R PIC S9(3) VALUE 0 BINARY.
-           02 G PIC S9(3) VALUE 0 BINARY.
-           02 B PIC S9(3) VALUE 0 BINARY.
-           02 A PIC S9(3) VALUE 255 BINARY.
+           02 R    PIC S9(3)   VALUE 0 BINARY.
+           02 G    PIC S9(3)   VALUE 0 BINARY.
+           02 B    PIC S9(3)   VALUE 0 BINARY.
+           02 A    PIC S9(3)   VALUE 255 BINARY.
       *----------------------------------------------------------------*
       *    PLAYER-VARIABLES
       *----------------------------------------------------------------*
       *    P: PLAYER
-       78 P-WIDTH         VALUE 8.
-       78 P-HEIGHT        VALUE 80.
-       78 P-POSX          VALUE 10.
-       77 P-POSY PIC 9(3)V9(8).
+       78 P-WIDTH              VALUE 8.
+       78 P-HEIGHT             VALUE 80.
+       78 P-POSX               VALUE 10.
+       77 P-POSY   PIC 9(3)V9(8).
       *----------------------------------------------------------------*
       *    BALL-VARIABLES
       *----------------------------------------------------------------*
       *    B: BALL
-       78 B-SIZE         VALUE 16.
-       77 B-POSX PIC 999 VALUE 400.
-       77 B-POSY PIC 999 VALUE 225.
-       77 B-HSPEED PIC S9(3).
-       77 B-VSPEED PIC S9(3).
+       78 B-SIZE               VALUE 16.
+       77 B-POSX   PIC 9(3)V9  VALUE 780.
+       77 B-POSY   PIC 9(3)V9  VALUE 225.
+       77 B-HSPEED PIC SV9     VALUE -0.6.
+       77 B-VSPEED PIC SV9     VALUE ZERO.
       *================================================================*
        PROCEDURE                                               DIVISION.
       *================================================================*
        MAIN-PROCEDURE.
        PERFORM INIT-WINDOW.
+       PERFORM GAME-INIT.
        PERFORM GAME-LOOP.
        PERFORM CLOSE-WINDOW.
        GOBACK.
@@ -90,6 +91,8 @@
            CALL "SetTargetFPS" USING BY VALUE 0
                    RETURNING OMITTED
            END-CALL.
+      *----------------------------------------------------------------*
+       GAME-INIT                                                SECTION.
       *----------------------------------------------------------------*
        GAME-LOOP                                                SECTION.
            PERFORM UNTIL K-ESC = 1
@@ -135,6 +138,8 @@
                RETURNING OMITTED
            END-CALL.
       *----------------------------------------------------------------*
+       GAME-END                                                 SECTION.
+      *----------------------------------------------------------------*
        PLAYER-MOVE                                              SECTION.
            IF R-KEY-UP = K-PRESSED THEN 
                SUBTRACT 1 FROM P-POSY
@@ -154,8 +159,10 @@
       *----------------------------------------------------------------*
        BALL-MOVE                                                SECTION.
            ADD B-HSPEED TO B-POSX
-           ADD B-VSPEED TO B-POSY.
-
+           ADD B-VSPEED TO B-POSY
+           IF B-POSY <= 1 then
+               PERFORM GAME-END
+           END-IF.
       *----------------------------------------------------------------*
        BALL-DRAW                                                SECTION.
            CALL static "DrawRectangle" USING
