@@ -59,7 +59,8 @@
        78 P-WIDTH              VALUE 8.
        78 P-HEIGHT             VALUE 80.
        78 P-POSX               VALUE 10.
-       77 P-POSY   PIC 9(3)V9(8).
+       77 P-POSY   PIC 999V99.
+       77 P-SPEED  PIC S9V999  VALUE ZERO.
       *----------------------------------------------------------------*
       *    BALL-VARIABLES
       *----------------------------------------------------------------*
@@ -141,14 +142,17 @@
        GAME-END                                                 SECTION.
       *----------------------------------------------------------------*
        PLAYER-MOVE                                              SECTION.
-           IF R-KEY-UP = K-PRESSED THEN 
-               SUBTRACT 1 FROM P-POSY
-           END-IF
-           IF R-KEY-DOWN = K-PRESSED THEN 
-               IF SUM(P-POSY, P-HEIGHT) < W-HEIGHT THEN
-                   ADD 1 TO P-POSY
+           IF R-KEY-DOWN = K-PRESSED 
+               AND SUM(P-POSY, P-HEIGHT, 1) < W-HEIGHT THEN 
+               MULTIPLY R-DELTATIME BY 0.4 GIVING P-SPEED
+           ELSE
+               IF R-KEY-UP = K-PRESSED AND P-POSY > 1 THEN 
+                   MULTIPLY R-DELTATIME BY -0.4 GIVING P-SPEED
+               ELSE 
+                   SET P-SPEED TO ZERO
                END-IF
-           END-IF.
+           END-IF
+           ADD P-SPEED TO P-POSY. 
       *----------------------------------------------------------------*
        PLAYER-DRAW                                              SECTION.
            CALL static "DrawRectangle" USING
