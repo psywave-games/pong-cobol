@@ -89,7 +89,7 @@
                    UPON SYSERR
                    END-DISPLAY
            END-CALL
-           CALL "SetTargetFPS" USING BY VALUE 0
+           CALL "SetTargetFPS" USING BY VALUE 30
                    RETURNING OMITTED
            END-CALL.
       *----------------------------------------------------------------*
@@ -162,8 +162,8 @@
            END-CALL.
       *----------------------------------------------------------------*
        BALL-MOVE                                                SECTION.
-           ADD B-HSPEED TO B-POSX
-           ADD B-VSPEED TO B-POSY
+           COMPUTE B-POSX = B-POSX + B-HSPEED * R-DELTATIME
+           COMPUTE B-POSY = B-POSY + B-VSPEED * R-DELTATIME
            IF B-POSY <= 1 then
                PERFORM GAME-END
            END-IF.

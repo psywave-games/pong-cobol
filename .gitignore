@@ -5,4 +5,10 @@
 Thumbs.db
 
 # Binary
+*.out
 game
+
+# C Build Files
+*.c.l.h
+*.c.h
+*.c
