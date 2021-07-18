@@ -63,8 +63,8 @@
        78 B-SIZE               VALUE 16.
        77 B-POSX   PIC 9(3)V9  VALUE 780.
        77 B-POSY   PIC 9(3)V9  VALUE 225.
-       77 B-HSPEED PIC SV9     VALUE -0.6.
-       77 B-VSPEED PIC SV9     VALUE ZERO.
+       77 B-HSPEED PIC S9(2)V9 VALUE -5.0.
+       77 B-VSPEED PIC S9(2)V9 VALUE ZERO.
       *================================================================*
        PROCEDURE                                               DIVISION.
       *================================================================*
@@ -89,6 +89,7 @@
            END-CALL.
       *----------------------------------------------------------------*
        GAME-INIT                                                SECTION.
+           PERFORM BALL-RANDOM.
       *----------------------------------------------------------------*
        GAME-LOOP                                                SECTION.
            PERFORM UNTIL K-ESC = 1
@@ -98,6 +99,7 @@
             
                PERFORM GAME-INPUT
                PERFORM PLAYER-MOVE
+               PERFORM BALL-COLISION
                PERFORM BALL-MOVE
                PERFORM GAME-DRAW
 
@@ -148,11 +150,36 @@
                BY CONTENT C-WHITE
            END-CALL.
       *----------------------------------------------------------------*
+       BALL-RANDOM                                              SECTION.
+           PERFORM WITH TEST AFTER UNTIL ABS (B-VSPEED) > 4
+               CALL "GetRandomValue" USING
+                   BY VALUE -7
+                   BY VALUE 7
+                   RETURNING B-VSPEED
+               END-CALL
+           END-PERFORM.
+      *----------------------------------------------------------------*
        BALL-MOVE                                                SECTION.
-           COMPUTE B-POSX = B-POSX + B-HSPEED
-           COMPUTE B-POSY = B-POSY + B-VSPEED
-           IF B-POSY <= 1 then
+           ADD B-HSPEED TO B-POSX 
+           ADD B-VSPEED TO B-POSY
+           IF B-POSY <= 1 THEN
                PERFORM GAME-END
+           END-IF.
+      *----------------------------------------------------------------*
+       BALL-COLISION                                            SECTION.
+           IF B-POSY <= B-SIZE/2
+               OR B-POSY >= W-HEIGHT - B-SIZE/2 THEN 
+               MULTIPLY -1 BY B-VSPEED
+           END-IF
+           IF B-POSX >= W-WIDTH - B-SIZE/2 THEN
+               MULTIPLY -1 BY B-HSPEED
+               PERFORM BALL-RANDOM 
+           END-IF
+           IF B-POSX <= P-WIDTH
+               AND B-POSY > P-POSY
+               AND B-POSY < P-POSY + P-HEIGHT THEN
+               MULTIPLY -1.2 BY B-HSPEED
+               PERFORM BALL-RANDOM 
            END-IF.
       *----------------------------------------------------------------*
        BALL-DRAW                                                SECTION.
