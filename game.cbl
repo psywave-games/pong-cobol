@@ -28,7 +28,6 @@
       *    C: COLOR
    
        01 R-CODE USAGE BINARY-LONG.
-       01 R-DELTATIME PIC S9(1)V9(8).
        01 R-KEY-UP    PIC 9.
        01 R-KEY-DOWN  PIC 9.
       
@@ -47,11 +46,7 @@
            02 B    PIC S9(3)   VALUE 245 BINARY.
            02 A    PIC S9(3)   VALUE 255 BINARY.
 
-       01 C-BLACK.
-           02 R    PIC S9(3)   VALUE 0 BINARY.
-           02 G    PIC S9(3)   VALUE 0 BINARY.
-           02 B    PIC S9(3)   VALUE 0 BINARY.
-           02 A    PIC S9(3)   VALUE 255 BINARY.
+       78 C-BLACK              VALUE 0.
       *----------------------------------------------------------------*
       *    PLAYER-VARIABLES
       *----------------------------------------------------------------*
@@ -59,8 +54,8 @@
        78 P-WIDTH              VALUE 8.
        78 P-HEIGHT             VALUE 80.
        78 P-POSX               VALUE 10.
+       78 P-SPEED              VALUE 16.
        77 P-POSY   PIC 999V99.
-       77 P-SPEED  PIC S9V999  VALUE ZERO.
       *----------------------------------------------------------------*
       *    BALL-VARIABLES
       *----------------------------------------------------------------*
@@ -106,10 +101,6 @@
                PERFORM BALL-MOVE
                PERFORM GAME-DRAW
 
-               CALL "GetFrameTime" 
-                   RETURNING R-DELTATIME
-               END-CALL
-               
            END-PERFORM.
       *----------------------------------------------------------------*
        GAME-INPUT                                               SECTION.
@@ -128,7 +119,7 @@
                RETURNING OMITTED
            END-CALL 
 
-           CALL "ClearBackground" USING BY REFERENCE C-BLACK
+           CALL "ClearBackground" USING BY VALUE C-BLACK
                RETURNING OMITTED
            END-CALL
 
@@ -144,15 +135,11 @@
        PLAYER-MOVE                                              SECTION.
            IF R-KEY-DOWN = K-PRESSED 
                AND SUM(P-POSY, P-HEIGHT, 1) < W-HEIGHT THEN 
-               MULTIPLY R-DELTATIME BY 0.4 GIVING P-SPEED
+                   ADD P-SPEED TO P-POSY
            ELSE
-               IF R-KEY-UP = K-PRESSED AND P-POSY > 1 THEN 
-                   MULTIPLY R-DELTATIME BY -0.4 GIVING P-SPEED
-               ELSE 
-                   SET P-SPEED TO ZERO
-               END-IF
-           END-IF
-           ADD P-SPEED TO P-POSY. 
+               IF R-KEY-UP = K-PRESSED AND P-POSY > 1 THEN
+                   SUBTRACT P-SPEED FROM P-POSY
+           END-IF. 
       *----------------------------------------------------------------*
        PLAYER-DRAW                                              SECTION.
            CALL static "DrawRectangle" USING
@@ -162,8 +149,8 @@
            END-CALL.
       *----------------------------------------------------------------*
        BALL-MOVE                                                SECTION.
-           COMPUTE B-POSX = B-POSX + B-HSPEED * R-DELTATIME
-           COMPUTE B-POSY = B-POSY + B-VSPEED * R-DELTATIME
+           COMPUTE B-POSX = B-POSX + B-HSPEED
+           COMPUTE B-POSY = B-POSY + B-VSPEED
            IF B-POSY <= 1 then
                PERFORM GAME-END
            END-IF.
