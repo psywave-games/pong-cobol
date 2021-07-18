@@ -28,17 +28,21 @@
       *    C: COLOR
    
        01 R-CODE USAGE BINARY-LONG.
-       01 R-KEY-UP    PIC 9.
-       01 R-KEY-DOWN  PIC 9.
+       01 R-KEY-UP             PIC 9.
+       01 R-KEY-DOWN           PIC 9.
+       01 R-KEY-ENTER          PIC 9.
       
        01 K-UP     PIC 9(8)    VALUE 265.
        01 K-DOWN   PIC 9(9)    VALUE 264.
        01 K-ESC    PIC 9(8)    VALUE 256.
+       01 K-ENTER  PIC 9(8)    VALUE 257.
        78 K-PRESSED            VALUE 7.
        
        78 W-WIDTH              VALUE 800.
        78 W-HEIGHT             VALUE 450.
        78 W-NAME               VALUE "PONG COBOL GAME".
+       78 W-GAMEOVER           VALUE "GAMEOVER! PRESS ENTER TO RESTART".
+       01 W-FINISHED PIC 9     VALUE ZERO.
 
        01 C-WHITE.
            02 R    PIC S9(3)   VALUE 245 BINARY.
@@ -51,20 +55,20 @@
       *    PLAYER-VARIABLES
       *----------------------------------------------------------------*
       *    P: PLAYER
-       78 P-WIDTH              VALUE 8.
+       78 P-WIDTH              VALUE 16.
        78 P-HEIGHT             VALUE 80.
-       78 P-POSX               VALUE 10.
+       78 P-POSX               VALUE 0.
        78 P-SPEED              VALUE 16.
-       77 P-POSY   PIC 999V99.
+       77 P-POSY               PIC 999V99.
       *----------------------------------------------------------------*
       *    BALL-VARIABLES
       *----------------------------------------------------------------*
       *    B: BALL
        78 B-SIZE               VALUE 16.
-       77 B-POSX   PIC 9(3)V9  VALUE 780.
-       77 B-POSY   PIC 9(3)V9  VALUE 225.
-       77 B-HSPEED PIC S9(2)V9 VALUE -5.0.
-       77 B-VSPEED PIC S9(2)V9 VALUE ZERO.
+       77 B-POSX               PIC 9(3)V9.
+       77 B-POSY               PIC 9(3)V9.
+       77 B-HSPEED             PIC S9(2)V9.
+       77 B-VSPEED             PIC S9(2)V9.
       *================================================================*
        PROCEDURE                                               DIVISION.
       *================================================================*
@@ -89,6 +93,10 @@
            END-CALL.
       *----------------------------------------------------------------*
        GAME-INIT                                                SECTION.
+           MOVE 0 TO W-FINISHED
+           MOVE -5.0 TO B-HSPEED
+           MOVE 780 TO B-POSX
+           MOVE 225 TO B-POSY
            PERFORM BALL-RANDOM.
       *----------------------------------------------------------------*
        GAME-LOOP                                                SECTION.
@@ -96,6 +104,10 @@
                CALL "WindowShouldClose"
                    RETURNING K-ESC
                END-CALL
+
+               IF R-KEY-ENTER = K-PRESSED THEN
+                   PERFORM GAME-INIT
+               END-IF
             
                PERFORM GAME-INPUT
                PERFORM PLAYER-MOVE
@@ -114,6 +126,11 @@
            CALL "IsKeyDown" USING 
                BY VALUE K-DOWN
                RETURNING R-KEY-DOWN
+           END-CALL
+
+           CALL "IsKeyDown" USING 
+               BY VALUE K-ENTER
+               RETURNING R-KEY-ENTER
            END-CALL.
       *----------------------------------------------------------------*
        GAME-DRAW                                                SECTION.
@@ -125,14 +142,20 @@
                RETURNING OMITTED
            END-CALL
 
-           PERFORM PLAYER-DRAW
-           PERFORM BALL-DRAW
+           IF W-FINISHED <> 0 THEN
+               CALL static "DrawText" USING
+                   BY REFERENCE W-GAMEOVER
+                   BY VALUE 32 200 32
+                   BY CONTENT C-WHITE
+               END-CALL
+           ELSE
+               PERFORM PLAYER-DRAW
+               PERFORM BALL-DRAW
+           END-IF
 
            CALL STATIC "EndDrawing"
                RETURNING OMITTED
            END-CALL.
-      *----------------------------------------------------------------*
-       GAME-END                                                 SECTION.
       *----------------------------------------------------------------*
        PLAYER-MOVE                                              SECTION.
            IF R-KEY-DOWN = K-PRESSED 
@@ -161,10 +184,7 @@
       *----------------------------------------------------------------*
        BALL-MOVE                                                SECTION.
            ADD B-HSPEED TO B-POSX 
-           ADD B-VSPEED TO B-POSY
-           IF B-POSY <= 1 THEN
-               PERFORM GAME-END
-           END-IF.
+           ADD B-VSPEED TO B-POSY.
       *----------------------------------------------------------------*
        BALL-COLISION                                            SECTION.
            IF B-POSY <= B-SIZE/2
@@ -175,11 +195,16 @@
                MULTIPLY -1 BY B-HSPEED
                PERFORM BALL-RANDOM 
            END-IF
-           IF B-POSX <= P-WIDTH
-               AND B-POSY > P-POSY
-               AND B-POSY < P-POSY + P-HEIGHT THEN
-               MULTIPLY -1.2 BY B-HSPEED
+           IF B-POSX <= P-WIDTH THEN
+               IF B-POSY > P-POSY
+                   AND B-POSY < P-POSY + P-HEIGHT THEN
+                   MULTIPLY -1.2 BY B-HSPEED
+                   PERFORM BALL-RANDOM 
                PERFORM BALL-RANDOM 
+                   PERFORM BALL-RANDOM 
+               ELSE
+                   MOVE 1 TO W-FINISHED
+               END-IF
            END-IF.
       *----------------------------------------------------------------*
        BALL-DRAW                                                SECTION.
